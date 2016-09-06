@@ -1,0 +1,13 @@
+#!/usr/bin/awk -f
+{
+  if ( />Cl/ ) {
+    if (ClusterID) { print ClusterID, count; };
+    ClusterID=$0;
+    count=0;
+  } else {
+    ++count;
+  }
+}
+END {
+  print ClusterID, count;
+}
