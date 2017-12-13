@@ -1,0 +1,12 @@
+#!/usr/bin/awk -f
+{
+  if ( />Cl/ ) {
+    ClusterID=$0;
+  } else {
+    sequ=$0;
+    print ClusterID "\t" sequ
+  }
+}
+END {
+  print ClusterID "\t" sequ;
+}
