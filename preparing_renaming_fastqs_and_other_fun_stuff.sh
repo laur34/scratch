@@ -6,8 +6,28 @@
 #Create a file where the names of the fastq folders are next to the names of the fastq files.
 ls */* |  cut -d"/" -f1,2 --output-delimiter=' ' > mapping_names_to_nums.txt
 
-cp ~/Desktop/pipeline_utils/prepare_files.sh .
-bash prepare_files.sh
+#cp ~/Desktop/pipeline_utils/prepare_files.sh .
+#bash prepare_files.sh
+echo "Moving ..."
+echo
+find . -mindepth 2 -type f -print -exec mv {} . \;
+sleep 2
+
+# delete the now empty subfolders
+echo
+echo "Performing maintenance ..."
+echo
+find . -type d -empty -delete
+sleep 2
+
+# unzip all sequence files
+echo "Unzipping ..."
+echo
+gunzip *
+echo
+echo "Done."
+echo
+sleep 2
 
 # Sort to make the order correspond to the alphabetically sorted order produced by ls:
 sort -k2,2 mapping_names_to_nums.txt > mapping_names_to_nums_sorted.txt
