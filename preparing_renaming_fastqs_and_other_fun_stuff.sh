@@ -49,3 +49,11 @@ sed -i 's/.gz$//' newnames.txt
 for file in ./*.fastq; do echo "${file##*/}"; done > oldnames.txt
 paste oldnames.txt newnames.txt > old_to_new_names.tsv
 xargs -a old_to_new_names.tsv -n 2 mv
+
+# clean up
+echo "Deleting intermediate files ..."
+rm mapping*.txt
+rm new*.txt
+rm old*.txt
+rm old*.tsv
+echo "Finished."
