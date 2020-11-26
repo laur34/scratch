@@ -1,7 +1,36 @@
-# Given fastq files zipped into their own folders, and the folders have names we want (with additional hex stuff)
-# but the fastqs are named only by number,
-# Change the fastq files to have the corresponding desired names--but without underscores in the core names.
-# 2.12.2019 LH
+#!/bin/bash
+
+# A script to prepare sequence files for the vsearch pipeline, when fastq files do not have the correct names.
+# Given fastq files zipped into their own folders, and the folders have names we want (with additional hex strings),
+# changes the fastq files to have the corresponding desired names--but without underscores in the core names.
+
+# 2.12.2019 LH@AIM, VB@AIM, last change 26.11.2020 LH
+
+confirm(){
+        # call this function with a prompt string or use the default value
+        read -r -p "${1:-Continue? [y/N]} " response
+        case "$response" in
+                [yY][eE][sS]|[yY])
+                        true
+                        ;;
+                *)
+                        false
+                        exit 1
+                        ;;
+        esac
+}
+
+# check if subfolders are present
+subdircount=`find . -maxdepth 1 -type d | wc -l`
+
+if [ $subdircount -eq 2 ]
+then
+    echo "Warning: no subfolders found in current folder."
+    echo "Have you forgotten to copy over the sequence files?"
+    echo
+    exit 1
+fi
+
 
 #Create a file where the names of the fastq folders are next to the names of the fastq files.
 ls */* |  cut -d"/" -f1,2 --output-delimiter=' ' > mapping_names_to_nums.txt
