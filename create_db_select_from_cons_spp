@@ -1,0 +1,78 @@
+#join -1 19 -2 1 -o 1.19,2.1,2.2 <(sort -k19 redlist_reordered_raw.tsv) ../species_nubkeys_ALL_sorted.csv
+#join -1 1 -2 1 -o 1.1,2.1,2.2 -e '-' rrspec.tsv species_nubkeys_ALL_sorted.csv
+#join -a1 -a2 rrspec.tsv species_nubkeys_ALL_sorted.csv
+#join -a1 -a2 -o 1.1,1.2 rrspec.tsv species_nubkeys_ALL_sorted.csv
+#join -e- -a1 -a2 rrspec.tsv -o 0 1.1 2.1 2.2 species_nubkeys_ALL_sorted.csv
+
+##V's commads to clean < |
+cat species_nubkeys_ALL_sorted.tsv | perl -pe 's/\w+ \& \w+, \d\d\d\d\t/\t/g' | perl -pe 's/\w+, \d\d\d\d\t/\t/g' | perl -pe 's/\(\w+, \[\d\d\d\d\] \)\t/\t/g' | perl -pe 's/\(\w+, \d\d\d\d\)\t/\t/g' | perl -pe 's/\(\w+\.\w+, \d\d\d\d\)\t/\t/g' | less -S
+
+
+
+#########################
+##create sqlite3 db of species names and nubKeys:
+sqlite3 test.db
+create table spec_nk(one varchar(70), two longint);
+#insert into spec_nk values('Zygothrica parvipoeyi',1560312);
+#insert into spec_nk values('Zygoneura contractans',1487024);
+#select * from spec_nk;
+.separator "\t"
+.import species_nubkeys_ALL_sorted.tsv spec_nk
+
+
+#search consensus species results against it
+sqlite3 test.db
+.separator "\t"
+#SELECT * FROM spec_nk WHERE one IN ($args_list);
+
+sed -i 's/_/ /' rrspec.tsv
+
+args_list=$(cat rrspec.tsv | awk 'NF {printf "\x27%s\x27,", $0}')
+args_list=${args_list::-1}
+
+sqlite3 test.db -cmd ".separator \t" "SELECT * FROM spec_nk WHERE one IN ($args_list);" > test.out
+
+#Use the created file of species with nubKeys to create URL list.
+sed -i 's/^$//' test.out
+
+while IFS=$'\t' read -r SPP NK; do
+    printf 'https://www.gbif.org/species/%s\n' "$NK"
+done < test.out
+
+#But this doesn't really help as far as adding the links to the results file.
+#New approach, skip the db, and just use the files themselves.
+##Combine consensus_Family, genus, and spp cols into one.
+cut -f17-19 redlist_reordered_raw.tsv > ccol.tsv
+##Make this column to only contain the rightmost values
+cat ccol.tsv | perl -pe 's/(\w+)\t\t\n/$1\n/' | perl -pe 's/\w+\t(\w+)\t\n/$1\n/' | perl -pe 's/\w+\t\w+\t(\w+)/$1/' | perl -pe 's/\t+//' > cons_comb.txt
+
+## search for these strings in the taxa_nk file, creating a new column
+
+while read -r line; do
+    if [ -z "$line" ]; then
+        echo "" >>gbif_col.txt
+    else
+        (grep "${line}\s" taxa_nubkeys_sorted_proc_uniq.csv || printf "\n") >>gbif_col.txt
+    fi
+done <cons_comb.txt
+
+#ok but some of the genera and families don't get results, because they have species, but the species didn't have a match.
+#2nd pass.
+##Create new input combined column from result of first pass, plus original consensus genus column
+paste <(cut -f18 redlist_reordered_raw.tsv)  <(cut -f1 gbif_col.txt) >cons_comb2.txt
+##Make it only contain the rightmost columns of the two it's made of:
+cat cons_comb2.txt | perl -pe 's/\w+\t(\w+)\n/$1\n/' | perl -pe 's/\t//g' > cons_comb2a.txt
+
+## search for these strings in the taxa_nk file, creating a (another) new column
+rm gbif_col.txt
+
+while read -r line; do
+    if [ -z "$line" ]; then
+        echo "" >>gbif_col.txt
+    else
+        (grep "${line}\s" taxa_nubkeys_sorted_proc_uniq.csv || printf "\n") >>gbif_col.txt
+    fi
+done <cons_comb2a.txt
+
+#Then, do a third pass, with the result of 2nd pass, and the original families column.
+
