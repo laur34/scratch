@@ -75,4 +75,28 @@ while read -r line; do
 done <cons_comb2a.txt
 
 #Then, do a third pass, with the result of 2nd pass, and the original families column.
+paste <(cut -f17 redlist_reordered_raw.tsv) <(cut -f1 gbif_col.txt) > cons_comb3.txt
+
+cat cons_comb3.txt | perl -pe 's/\w+\t(\w+)\n/$1\n/' | perl -pe 's/\t//g' > cons_comb3a.txt
+rm gbif_col.txt
+
+while read -r line; do
+    if [ -z "$line" ]; then
+        echo "" >>gbif_col.txt
+    else
+        (grep "${line}\s" taxa_nubkeys_sorted_proc_uniq.csv || printf "\n") >>gbif_col.txt
+    fi
+done <cons_comb3a.txt
+
+#try how it looks
+paste redlist_reordered_raw.tsv gbif_col.txt > redlist_reordered_raw_with_gbif_3rd_pass.tsv
+
+#Last part: create column containing URLs for taxa (s/g/f) which have them, leave blank line if not.
+while IFS=$'\t' read nomen nubkey; do
+    if [ -z "$nomen" ]; then
+        printf "\n" >>gbif_URL_col.txt
+    else
+        printf 'https://www.gbif.org/species/%s\n' "$nubkey" >>gbif_URL_col.txt
+    fi
+done <gbif_col.txt
 
