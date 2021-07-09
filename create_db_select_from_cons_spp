@@ -1,15 +1,29 @@
-#join -1 19 -2 1 -o 1.19,2.1,2.2 <(sort -k19 redlist_reordered_raw.tsv) ../species_nubkeys_ALL_sorted.csv
-#join -1 1 -2 1 -o 1.1,2.1,2.2 -e '-' rrspec.tsv species_nubkeys_ALL_sorted.csv
-#join -a1 -a2 rrspec.tsv species_nubkeys_ALL_sorted.csv
-#join -a1 -a2 -o 1.1,1.2 rrspec.tsv species_nubkeys_ALL_sorted.csv
-#join -e- -a1 -a2 rrspec.tsv -o 0 1.1 2.1 2.2 species_nubkeys_ALL_sorted.csv
+#First, use the big Animalia tsv file from BOLD to obtain lists of families, genera, and species, for which we will obtain nubKeys,
+#because these are the numbers in the URLs of the GBIF web pages for each taxon.
 
-##V's commads to clean < |
+cat Animalia_03_02_2021_bold_combined.tsv | cut -f16 > ~/Desktop/learn_rgbif/families.txt
+
+sed -i '/[^[:alnum:]]/d' families.txt
+
+sort -u families.txt > families.nospec.txt
+tail -n +2 families.nospec.txt > tmp; mv tmp families.nospec.txt
+
+#Then go in R and run script to download taxa and their nubKeys, using rgbif (learn_rgbif.R).
+#Also do this for genera and species (columns of bold tsv file, not shown).
+
+#When they are done downloading, export them.
+#May need cleaning.
+##V's commads to clean
 cat species_nubkeys_ALL_sorted.tsv | perl -pe 's/\w+ \& \w+, \d\d\d\d\t/\t/g' | perl -pe 's/\w+, \d\d\d\d\t/\t/g' | perl -pe 's/\(\w+, \[\d\d\d\d\] \)\t/\t/g' | perl -pe 's/\(\w+, \d\d\d\d\)\t/\t/g' | perl -pe 's/\(\w+\.\w+, \d\d\d\d\)\t/\t/g' | less -S
 
+#Combine them all into one.
+cat families_nubkeys.csv genera_nubkeys.csv species_nubkeys_ALL_sorted.csv > taxa_nubkeys.tsv
+sed -i 's/"//g' taxa_nubkeys.tsv
+sed -i '/\$/d' taxa_nubkeys.tsv
+sort -u taxa_nubkeys.tsv > taxa_nubkeys_uniq.tsv
+sed -i 's/ /_/g' taxa_nubkeys_uniq.tsv
 
-
-#########################
+##############################################################
 ##create sqlite3 db of species names and nubKeys:
 sqlite3 test.db
 create table spec_nk(one varchar(70), two longint);
@@ -38,7 +52,7 @@ sed -i 's/^$//' test.out
 while IFS=$'\t' read -r SPP NK; do
     printf 'https://www.gbif.org/species/%s\n' "$NK"
 done < test.out
-
+###########################################################
 #But this doesn't really help as far as adding the links to the results file.
 #New approach, skip the db, and just use the files themselves.
 ##Combine consensus_Family, genus, and spp cols into one.
@@ -52,7 +66,7 @@ while read -r line; do
     if [ -z "$line" ]; then
         echo "" >>gbif_col.txt
     else
-        (grep "${line}\s" taxa_nubkeys_sorted_proc_uniq.csv || printf "\n") >>gbif_col.txt
+        (grep "${line}\s" taxa_nubkeys_uniq.tsv || printf "\n") >>gbif_col.txt
     fi
 done <cons_comb.txt
 
@@ -70,7 +84,7 @@ while read -r line; do
     if [ -z "$line" ]; then
         echo "" >>gbif_col.txt
     else
-        (grep "${line}\s" taxa_nubkeys_sorted_proc_uniq.csv || printf "\n") >>gbif_col.txt
+        (grep "${line}\s" taxa_nubkeys_uniq.tsv || printf "\n") >>gbif_col.txt
     fi
 done <cons_comb2a.txt
 
@@ -84,7 +98,7 @@ while read -r line; do
     if [ -z "$line" ]; then
         echo "" >>gbif_col.txt
     else
-        (grep "${line}\s" taxa_nubkeys_sorted_proc_uniq.csv || printf "\n") >>gbif_col.txt
+        (grep "${line}\s" taxa_nubkeys_uniq.tsv || printf "\n") >>gbif_col.txt
     fi
 done <cons_comb3a.txt
 
@@ -100,3 +114,7 @@ while IFS=$'\t' read nomen nubkey; do
     fi
 done <gbif_col.txt
 
+##Problem occurs when multiple matches occur when grepping taxa key file.
+##Need to make it unique on the first column (not just one whole line.), e.g. Apamea and ApameaGenN (in original input)
+##For now, workaround by taking only lines unique on first column.
+sort -u -k1,1 taxa_nubkeys_uniq.tsv > tmp; mv tmp taxa_nubkeys_uniq.tsv
