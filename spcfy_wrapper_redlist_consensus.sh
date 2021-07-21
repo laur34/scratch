@@ -758,13 +758,22 @@ HEADER_P2=$(echo "NCBI_Accession_ID,NCBI_tax_ID,adjusted_Domain_NCBI,adjusted_Ph
 REDLIST=redlist_reordered_nohead.tsv
 cat <(paste -d "\t" <(echo $HEADER_P1) <(echo $SAMPLE_NAMES) <(echo $HEADER_P2) | perl -pe 's/ /\t/g') $REDLIST > redlist_reordered_raw.tsv
 
-##################################################### Chop off the existing redlist part from nohead step and call it results_raw.tsv
-#### (redoing from line 582, since it was already done this way.)
+################### Chop off the existing redlist part from nohead step and call it results_reordered_cut.tsv
+let COL_BOLD_LINK=$COL_BINSHARING+4
+cut -f1-$COL_BOLD_LINK redlist_reordered_raw.tsv > redlist_reordered_cut.tsv
+#
+NUM_COLS_RESCUT=$(awk -F'\t' '{print NF; exit}' redlist_reordered_cut.tsv)
+out_fields_results_cut=$(seq 1 1 $NUM_COLS_RESCUT | \
+	perl -pe 's/(\d+)\n/1.\1,/g' | \
+	perl -pe 's/\,$/\n/g')
+NUM_COLS_REDL=$(awk -F'\t' '{print NF; exit}' ${REDLIST_FILE})
+out_fields_red_list=$(seq 1 1 $NUM_COLS_REDL | \
+	perl -pe 's/(\d+)\n/2.\1,/g' | \
+	perl -pe 's/\,$/\n/g')
 
-cut -f1-$NUM_COLS_REDL redlist_reordered_raw.tsv > redlist_reordered_cut.tsv
 
 #join
-join -a 1 -t $'\t' -1 18 -2 1 <(tail -n +2 redlist_reordered_cut.tsv | perl -pe 's/ /_/g' | sort -t $'\t' -k18,18) <(tail -n +2 ${REDLIST_FILE} | perl -pe 's/ /_/g' | sort -t $'\t' -k1,1) -o $out_fields_results_raw,$out_fields_red_list > noheader_redlist_reordered_raw.tsv
+join -a 1 -t $'\t' -1 19 -2 1 <(tail -n +2 redlist_reordered_cut.tsv | perl -pe 's/ /_/g' | sort -t $'\t' -k19,19) <(tail -n +2 ${REDLIST_FILE} | perl -pe 's/ /_/g' | sort -t $'\t' -k1,1) -o $out_fields_results_cut,$out_fields_red_list > noheader_redlist_reordered_raw.tsv
 #add header
 cat <(paste -d "\t" <(echo $HEADER_P1) <(echo $SAMPLE_NAMES) <(echo $HEADER_P2) | perl -pe 's/ /\t/g') noheader_redlist_reordered_raw.tsv > redlist_reordered_raw.tsv
-
+echo "Finished."
