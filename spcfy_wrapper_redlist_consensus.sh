@@ -758,20 +758,13 @@ HEADER_P2=$(echo "NCBI_Accession_ID,NCBI_tax_ID,adjusted_Domain_NCBI,adjusted_Ph
 REDLIST=redlist_reordered_nohead.tsv
 cat <(paste -d "\t" <(echo $HEADER_P1) <(echo $SAMPLE_NAMES) <(echo $HEADER_P2) | perl -pe 's/ /\t/g') $REDLIST > redlist_reordered_raw.tsv
 
-#Chop off the existing redlist part from nohead step and call it results_raw.tsv - I did this manually, have to fix after it works.
-REDLIST_FILE=redlist_Mueller_2020_grouped.tsv
-cp ~/Downloads/Red_list/Joerg_Mueller_version/${REDLIST_FILE} .
-#RESRAW=results_raw.tsv
-#NUM_COLS_RESRAW=96
-NUM_COLS_RESRAW=$(awk -F'\t' '{print NF; exit}' results_raw.tsv)
-out_fields_results_raw=$(seq 1 1 $NUM_COLS_RESRAW | \
-	perl -pe 's/(\d+)\n/1.\1,/g' | \
-	perl -pe 's/\,$/\n/g')
+##################################################### Chop off the existing redlist part from nohead step and call it results_raw.tsv
+#### (redoing from line 582, since it was already done this way.)
 
-NUM_COLS_REDL=$(awk -F'\t' '{print NF; exit}' ${REDLIST_FILE})
-out_fields_red_list=$(seq 1 1 $NUM_COLS_REDL | \
-	perl -pe 's/(\d+)\n/2.\1,/g' | \
-	perl -pe 's/\,$/\n/g')
+cut -f1-$NUM_COLS_REDL redlist_reordered_raw.tsv > redlist_reordered_cut.tsv
 
 #join
-join -a 1 -t $'\t' -1 18 -2 1 <(tail -n +2 results_raw.tsv | perl -pe 's/ /_/g' | sort -t $'\t' -k18,18) <(tail -n +2 ${REDLIST_FILE} | perl -pe 's/ /_/g' | sort -t $'\t' -k1,1) -o $out_fields_results_raw,$out_fields_red_list > noheader_redlist_results_raw.csv
+join -a 1 -t $'\t' -1 18 -2 1 <(tail -n +2 redlist_reordered_cut.tsv | perl -pe 's/ /_/g' | sort -t $'\t' -k18,18) <(tail -n +2 ${REDLIST_FILE} | perl -pe 's/ /_/g' | sort -t $'\t' -k1,1) -o $out_fields_results_raw,$out_fields_red_list > noheader_redlist_reordered_raw.tsv
+#add header
+cat <(paste -d "\t" <(echo $HEADER_P1) <(echo $SAMPLE_NAMES) <(echo $HEADER_P2) | perl -pe 's/ /\t/g') noheader_redlist_reordered_raw.tsv > redlist_reordered_raw.tsv
+
