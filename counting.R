@@ -67,7 +67,7 @@ uniq_cons_spec <- function(df, sample){
 #  u <- unique(na.omit(samp$consensus_Species))
 }
 
-##################
+################## Implement Consensus Species Counts as a Function #######################
 data <- as.data.frame(data1)
 sample_names <- names(data)[26:50]
 
@@ -87,10 +87,23 @@ col <- subset3(data, sample_names[1])
 
 #ss <- subset2(data, data$`1.1.0`>0)
 ss <- subset2(data, col>0)
-
+##########################
 ss$consensus_Species
-lcs <- length(unique(na.omit(ss$consensus_Species)))
+#lcs <- length(unique(na.omit(ss$consensus_Species)))
+con_spec <- ss$consensus_Species[!is.na(ss$consensus_Species)]
+length(unique(con_spec))
 print(sample_names[1])
-print(lcs)
 
+########################## Implement BIN count above 97% as a function ######################
+ss$BOLD_BIN_uri
+BINs97 <- ss$BOLD_BIN_uri[ss$`BOLD_HIT%ID` >= 97]
+unique(BINs97[!is.na(BINs97)])
+print(length(unique(BINs97[!is.na(BINs97)]))) #81
+
+########################## Implement BIN count above 95% as a function ######################
+ss$BOLD_BIN_uri
+BINs <- ss$BOLD_BIN_uri[ss$`BOLD_HIT%ID` >= 95]
+length(unique(BINs[!is.na(BINs)])) #93
+bg95 <- length(unique(BINs[!is.na(BINs)]))
+print(bg95)
 
