@@ -31,7 +31,7 @@ length(unique(na.omit(allBINsAbove97))) #614
 
 ## 3
 allBINsAbove95 <- data1$BOLD_BIN_uri[which(data1$`BOLD_HIT%ID` >= 95)]
-length(unique(na.omit(allBINsAbove95)))
+length(unique(na.omit(allBINsAbove95))) #652
 
 ###### Sample-by-sample ########
 ##cols 26-50
@@ -52,3 +52,45 @@ length(BINsInSpl) #81
 sample1$BOLD_BIN_uri[sample1$`BOLD_HIT%ID` >= 95]
 BINsInSpl <- unique(na.omit(sample1$BOLD_BIN_uri[sample1$`BOLD_HIT%ID` >= 95]))
 length(BINsInSpl) #93
+
+#####
+## Sample names needed as input
+sample_names <- names(data1)[26:50]
+
+uniq_cons_spec <- function(df, sample){
+  #print(sample)
+  pars <- as.list(match.call()[-1])
+  ss <- df[as.character(pars$sample) != 0, ]
+#  print(ss)
+  print(ss[c(19,26)])
+#  p <- as.list(match.call()[-1])
+#  u <- unique(na.omit(samp$consensus_Species))
+}
+
+##################
+data <- as.data.frame(data1)
+sample_names <- names(data)[26:50]
+
+subset2 <- function(x, condition){
+  condition_call <- substitute(condition)
+  r <- eval(condition_call, x)
+  x[r, ]
+}
+
+subset3 <- function(x, condition){
+  condition_call <- substitute(condition)
+  r <- eval(condition_call, x)
+  x[, r]
+}
+
+col <- subset3(data, sample_names[1])
+
+#ss <- subset2(data, data$`1.1.0`>0)
+ss <- subset2(data, col>0)
+
+ss$consensus_Species
+lcs <- length(unique(na.omit(ss$consensus_Species)))
+print(sample_names[1])
+print(lcs)
+
+
