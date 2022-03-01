@@ -1,4 +1,5 @@
-## Count BINs for each sample, and how many of those BINs belong to specific taxa, Redlist categories, etc.
+## For each sample in a COI Excel report sheet, count how many BINs are present in it,
+## and how many of those belong to specific orders, are on the Red List, etc.
 ## 24.02.2022 LH@AIM
 
 library(readxl)
@@ -18,21 +19,12 @@ data1
 #Delete first row because it is the headers (doesn't read in without them, due to blank cells in first row)
 data1 <- data1[-1, ]
 
-## Sample columns (25-704)
+## Sample columns (25-704) ### Change this ###
 splcols <- data1[, 25:704]
 splnames <- names(splcols)
 data1[,25:704] <- sapply(data1[,25:704],as.numeric)
 
-#How many unique BINs does the first sample have? (BIN_Rich)
-BINsInSpl1 <- data1$BOLD_BIN_uri[which(data1$WMD00001>0)]
-unique(BINsInSpl1[!is.na(BINsInSpl1)]) #177
-##Do that for all samples.
-
-##Rich_Diptera - how many unique BINs correspond to Diptera?
-data1$BOLD_BIN_uri[which(data1$WMD00001>0)]
-data1$adjusted_Order_BOLD[which(data1$WMD00001>0)]
-data1$BOLD_BIN_uri[which(data1$WMD00001>0)]
-
+## Define functions for subsetting
 
 subset3 <- function(x, condition){
   condition_call <- substitute(condition)
@@ -60,15 +52,14 @@ for(i in 1:length(splnames)){
   ss <- subset2(data1, splcol>0)
   #"Total_BIN_Richness"
   ord_ss <- ss[,c("BOLD_BIN_uri","adjusted_Order_BOLD")]
-  ord_ss <- ord_ss[which(!is.na(ord_ss$adjusted_Order_BOLD)), ]
+  ord_ss <- ord_ss[which(!is.na(ord_ss$adjusted_Order_BOLD)), ] #This line removes records with NA's, so they don't differ from totals of below order counts
   BINsHas <- ord_ss$BOLD_BIN_uri
   BIN_rich_total = length(unique(na.omit(BINsHas)))
   print(unique(BINsHas))
   # Diptera BIN counts
-  #ord_ss <- ss[,c("BOLD_BIN_uri","adjusted_Order_BOLD")]
   ord_ss_d <- ord_ss[ord_ss$adjusted_Order_BOLD=="Diptera", ]
   rich_Diptera <- length(unique(na.omit(ord_ss_d$BOLD_BIN_uri)))
-  # Hymenoptera BIN countsor
+  # Hymenoptera BIN counts
   ord_ss_hy <- ord_ss[ord_ss$adjusted_Order_BOLD=="Hymenoptera", ]
   rich_Hymenoptera <- length(unique(na.omit(ord_ss_hy$BOLD_BIN_uri)))
   # Hemiptera BIN counts
@@ -128,14 +119,4 @@ for(i in 1:length(splnames)){
 dat
 row.names(dat) <- splnames
 
-
-
-
 write.table(dat, file="summary_samples_LFU_AUM_custom_2022.tsv", sep = "\t", col.names = NA)
-
-#Whenever I subset like this with string comparisons, it gets rid of th "NA" Order rows.
-#See the difference:
-ord_ss$adjusted_Order_BOLD
-#vs
-ord_ss$adjusted_Order_BOLD[which(ord_ss$adjusted_Order_BOLD != "Diptera")]
-#So, just get rid of the NA's in the first place, since I can't figure out how to include them in the subsets.
