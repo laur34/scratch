@@ -1,13 +1,13 @@
 #test of SWARM using Mandery NGS data
 #Now we must rename the representative sequences as OTU_, as well as the otu table, accordingly.
-FASTA=all.nonchimeras.derep_1f_representatives.fas
+FASTA="all.nonchimeras.derep_1f_representatives.fas"
 PROJECT=Mandery_test
 TBL="otu_table_0.98.txt"
 NUM_SEQS=$(grep -c '^EC' $TBL)
 paste <(grep "^EC" otu_table_0.98.txt | cut -f1) <(seq 1 1 $NUM_SEQS| perl -pe 's/(\d+)\n/OTU_\1,/g'| perl -pe 's/\,$/\n/g' | perl -pe 's/,/\n/g') > rel_tbl.tsv #This could be a start for a relational naming table
 #For each sequence name in the fasta, look it up in the rel table, and create a new fasta with the corresponding OTU_ names and sequences.
 
-cat "${FASTA}" | while read SEQNAME OTU; do
+cat rel_tbl.tsv | while read SEQNAME OTU; do
 	echo -n "${OTU}"
 	grep -A 1 ${SEQNAME}\; "${FASTA}"
 done > tmp.fa
