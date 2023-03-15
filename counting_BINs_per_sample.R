@@ -1,5 +1,5 @@
 ## Count consensus species detected for each sample, and also numbers of BINs with matches >= 97% and 95% Grade.
-## 15.03.2023 LH@AIM
+## 15.03.2023 LH
 
 library(readxl)
 setwd("/home/laur/Desktop/Schachtl_LFU_Teilprojekts_A_B_C_FT/Teilprojekt_C_FT")
